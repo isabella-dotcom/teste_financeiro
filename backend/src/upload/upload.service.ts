@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import { parse } from 'csv-parse/sync';
 import { AccountsPayableStatus, AccountsReceivableStatus, AccountsReceivableOrigem, PersonType } from '../common/enums';
 
-interface UploadResult {
+export interface UploadResult {
   totalRows: number;
   successRows: number;
   errorRows: number;

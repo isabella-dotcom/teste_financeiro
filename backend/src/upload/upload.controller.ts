@@ -7,7 +7,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { UploadService } from './upload.service';
+import { UploadService, UploadResult } from './upload.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('upload')
@@ -17,7 +17,7 @@ export class UploadController {
 
   @Post('accounts-payable')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAccountsPayable(@UploadedFile() file: Express.Multer.File) {
+  async uploadAccountsPayable(@UploadedFile() file: Express.Multer.File): Promise<UploadResult> {
     if (!file) {
       throw new BadRequestException('Arquivo não fornecido');
     }
@@ -27,7 +27,7 @@ export class UploadController {
 
   @Post('accounts-receivable')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAccountsReceivable(@UploadedFile() file: Express.Multer.File) {
+  async uploadAccountsReceivable(@UploadedFile() file: Express.Multer.File): Promise<UploadResult> {
     if (!file) {
       throw new BadRequestException('Arquivo não fornecido');
     }
