@@ -2,22 +2,19 @@
   "version": 2,
   "builds": [
     {
-      "src": "backend/package.json",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["backend/**"]
-      }
+      "src": "backend/api/index.ts",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "backend/src/main.ts"
+      "src": "/(.*)",
+      "dest": "backend/api/index.ts"
     }
   ],
-  "env": {
-    "DATABASE_URL": "@database_url",
-    "JWT_SECRET": "@jwt_secret"
+  "functions": {
+    "backend/api/index.ts": {
+      "includeFiles": "backend/**"
+    }
   }
 }
-
