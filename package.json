@@ -1,0 +1,16 @@
+{
+  "name": "sistema-financeiro-hucm",
+  "version": "1.0.0",
+  "description": "Sistema Financeiro HUCM",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev:backend": "cd backend && npm run start:dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  }
+}
+

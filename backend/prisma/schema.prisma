@@ -1,0 +1,186 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model GSIGroup {
+  id        String   @id @default(uuid())
+  codigo    String   @unique
+  nome      String
+  descricao String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subgroups GSISubgroup[]
+
+  @@map("gsi_groups")
+}
+
+model GSISubgroup {
+  id        String   @id @default(uuid())
+  groupId   String
+  codigo    String   @unique
+  nome      String
+  descricao String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  group     GSIGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  items     GSIItem[]
+
+  @@map("gsi_subgroups")
+}
+
+model GSIItem {
+  id        String   @id @default(uuid())
+  subgroupId String
+  codigo    String   @unique
+  nome      String
+  descricao String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subgroup          GSISubgroup           @relation(fields: [subgroupId], references: [id], onDelete: Cascade)
+  accountsPayable   AccountsPayable[]
+  accountsReceivable AccountsReceivable[]
+
+  @@map("gsi_items")
+}
+
+model Bank {
+  id      String   @id @default(uuid())
+  nome    String
+  codigo  String   @unique
+  agencia String
+  conta   String
+  tipo    String
+  ativo   Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountsPayable   AccountsPayable[]
+  accountsReceivable AccountsReceivable[]
+
+  @@map("banks")
+}
+
+enum PersonType {
+  PACIENTE
+  FORNECEDOR
+  CONVENIO
+  MEDICO
+}
+
+model Person {
+  id         String     @id @default(uuid())
+  tipo       PersonType
+  nome       String
+  documento  String?
+  observacao String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  accountsPayable   AccountsPayable[]
+  accountsReceivable AccountsReceivable[]
+
+  @@map("persons")
+}
+
+enum AccountsPayableStatus {
+  ABERTO
+  PAGO
+  CANCELADO
+}
+
+model AccountsPayable {
+  id              String                @id @default(uuid())
+  gsiItemId       String
+  bankId          String
+  personId        String
+  descricao       String
+  valor           Decimal               @db.Decimal(10, 2)
+  dataVencimento  DateTime
+  status          AccountsPayableStatus @default(ABERTO)
+  dataPagamento   DateTime?
+  formaPagamento  String?
+  observacao      String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  gsiItem GSIItem @relation(fields: [gsiItemId], references: [id])
+  bank    Bank    @relation(fields: [bankId], references: [id])
+  person  Person  @relation(fields: [personId], references: [id])
+
+  @@map("accounts_payable")
+}
+
+enum AccountsReceivableStatus {
+  ABERTO
+  RECEBIDO
+  PARCIAL
+  GLOSADO
+}
+
+enum AccountsReceivableOrigem {
+  PACIENTE
+  CONVENIO
+  ENCONTRO_CONTAS
+}
+
+model AccountsReceivable {
+  id              String                      @id @default(uuid())
+  gsiItemId       String
+  bankId          String
+  personId        String
+  origem          AccountsReceivableOrigem
+  valorPrevisto   Decimal                     @db.Decimal(10, 2)
+  valorRecebido   Decimal                     @default(0) @db.Decimal(10, 2)
+  valorGlosa      Decimal                     @default(0) @db.Decimal(10, 2)
+  status          AccountsReceivableStatus    @default(ABERTO)
+  dataPrevista    DateTime
+  dataRecebimento DateTime?
+  observacao      String?
+  createdAt       DateTime                    @default(now())
+  updatedAt       DateTime                    @updatedAt
+
+  gsiItem GSIItem @relation(fields: [gsiItemId], references: [id])
+  bank    Bank    @relation(fields: [bankId], references: [id])
+  person  Person  @relation(fields: [personId], references: [id])
+
+  @@map("accounts_receivable")
+}
+
+model UploadLog {
+  id          String   @id @default(uuid())
+  fileName    String
+  fileType    String
+  totalRows   Int
+  successRows Int
+  errorRows   Int
+  errors      Json?
+  createdAt   DateTime @default(now())
+
+  @@map("upload_logs")
+}
+

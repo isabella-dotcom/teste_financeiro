@@ -1,0 +1,27 @@
+===========================================
+COMANDOS RÁPIDOS PARA SUBIR NO GIT
+===========================================
+
+1. Inicializar:
+git init
+
+2. Adicionar arquivos:
+git add .
+
+3. Primeiro commit:
+git commit -m "feat: Sistema Financeiro HUCM - Implementação inicial completa"
+
+4. Adicionar repositório remoto (substitua a URL):
+git remote add origin https://github.com/SEU_USUARIO/SEU_REPOSITORIO.git
+
+5. Renomear branch:
+git branch -M main
+
+6. Enviar para o Git:
+git push -u origin main
+
+===========================================
+NOTA: Se o Git não estiver instalado, baixe em:
+https://git-scm.com/download/win
+===========================================
+
