@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsUUID, IsNumber, IsDateString, IsEnum } from 'class-validator';
-import { AccountsPayableStatus } from '@prisma/client';
+import { AccountsPayableStatus } from '../../common/enums';
 
 export class CreateAccountsPayableDto {
   @IsUUID()

@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as XLSX from 'xlsx';
 import { parse } from 'csv-parse/sync';
-import { AccountsPayableStatus, AccountsReceivableStatus, AccountsReceivableOrigem, PersonType } from '@prisma/client';
+import { AccountsPayableStatus, AccountsReceivableStatus, AccountsReceivableOrigem, PersonType } from '../common/enums';
 
 interface UploadResult {
   totalRows: number;

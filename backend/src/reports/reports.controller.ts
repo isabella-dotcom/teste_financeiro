@@ -9,7 +9,7 @@ import {
 import { Response } from 'express';
 import { ReportsService } from './reports.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AccountsPayableStatus, AccountsReceivableStatus } from '@prisma/client';
+import { AccountsPayableStatus, AccountsReceivableStatus } from '../common/enums';
 
 @Controller('reports')
 @UseGuards(JwtAuthGuard)

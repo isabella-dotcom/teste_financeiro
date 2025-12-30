@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAccountsReceivableDto } from './dto/create-accounts-receivable.dto';
 import { UpdateAccountsReceivableDto } from './dto/update-accounts-receivable.dto';
 import { ReceiveAccountsReceivableDto } from './dto/receive-accounts-receivable.dto';
-import { AccountsReceivableStatus } from '@prisma/client';
+import { AccountsReceivableStatus } from '../common/enums';
 
 @Injectable()
 export class AccountsReceivableService {

@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateAccountsPayableDto } from './dto/create-accounts-payable.dto';
 import { UpdateAccountsPayableDto } from './dto/update-accounts-payable.dto';
 import { PayAccountsPayableDto } from './dto/pay-accounts-payable.dto';
-import { AccountsPayableStatus } from '@prisma/client';
+import { AccountsPayableStatus } from '../common/enums';
 
 @Injectable()
 export class AccountsPayableService {

@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { PersonType } from '@prisma/client';
+import { PersonType } from '../../common/enums';
 
 export class CreatePersonDto {
   @IsEnum(PersonType)

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AccountsPayableStatus, AccountsReceivableStatus } from '@prisma/client';
+import { AccountsPayableStatus, AccountsReceivableStatus } from '../common/enums';
 import * as XLSX from 'xlsx';
 
 @Injectable()

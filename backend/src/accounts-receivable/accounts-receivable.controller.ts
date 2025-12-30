@@ -14,7 +14,7 @@ import { CreateAccountsReceivableDto } from './dto/create-accounts-receivable.dt
 import { UpdateAccountsReceivableDto } from './dto/update-accounts-receivable.dto';
 import { ReceiveAccountsReceivableDto } from './dto/receive-accounts-receivable.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AccountsReceivableStatus } from '@prisma/client';
+import { AccountsReceivableStatus } from '../common/enums';
 
 @Controller('accounts-receivable')
 @UseGuards(JwtAuthGuard)

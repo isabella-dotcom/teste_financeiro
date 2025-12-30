@@ -14,7 +14,7 @@ import { CreateAccountsPayableDto } from './dto/create-accounts-payable.dto';
 import { UpdateAccountsPayableDto } from './dto/update-accounts-payable.dto';
 import { PayAccountsPayableDto } from './dto/pay-accounts-payable.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { AccountsPayableStatus } from '@prisma/client';
+import { AccountsPayableStatus } from '../common/enums';
 
 @Controller('accounts-payable')
 @UseGuards(JwtAuthGuard)

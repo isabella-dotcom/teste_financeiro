@@ -13,7 +13,7 @@ import { PersonService } from './person.service';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { PersonType } from '@prisma/client';
+import { PersonType } from '../common/enums';
 
 @Controller('persons')
 @UseGuards(JwtAuthGuard)

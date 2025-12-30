@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsUUID, IsNumber, IsDateString, IsEnum } from 'class-validator';
-import { AccountsReceivableStatus, AccountsReceivableOrigem } from '@prisma/client';
+import { AccountsReceivableOrigem, AccountsReceivableStatus } from '../../common/enums';
 
 export class CreateAccountsReceivableDto {
   @IsUUID()
@@ -40,4 +40,3 @@ export class CreateAccountsReceivableDto {
   @IsOptional()
   observacao?: string;
 }
-
