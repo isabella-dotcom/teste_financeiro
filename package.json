@@ -10,7 +10,9 @@
   "scripts": {
     "dev:backend": "cd backend && npm run start:dev",
     "dev:frontend": "cd frontend && npm run dev",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install",
+    "vercel:install": "cd frontend && npm install && cd ../backend && npm install",
+    "vercel:build": "cd frontend && npm run build && cd ../backend && npm run build"
   }
 }
 
