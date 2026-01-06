@@ -1,18 +1,19 @@
 {
   "version": 2,
-  "buildCommand": "bash build.sh",
-  "installCommand": "bash install.sh",
-  "framework": null,
-  "rewrites": [
+  "buildCommand": "npm run vercel-build",
+  "builds": [
     {
-      "source": "/(.*)",
-      "destination": "/api"
+      "src": "api/index.ts",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": "backend/**"
+      }
     }
   ],
-  "functions": {
-    "api/index.ts": {
-      "includeFiles": "backend/**",
-      "runtime": "nodejs18.x"
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "api/index.ts"
     }
-  }
+  ]
 }
