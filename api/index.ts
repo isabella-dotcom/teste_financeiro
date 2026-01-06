@@ -1,8 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
-import { AppModule } from '../backend/dist/src/app.module';
 import express, { Request, Response } from 'express';
+
+// Import AppModule from compiled code
+import { AppModule } from '../backend/dist/src/app.module';
 
 let cachedApp: express.Application | null = null;
 let isInitializing = false;
@@ -20,10 +22,16 @@ async function createApp(): Promise<express.Application> {
   initPromise = (async () => {
     try {
       isInitializing = true;
+      console.log('Initializing NestJS app...');
+      console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
+      
       const expressApp = express();
       const app = await NestFactory.create(
         AppModule,
         new ExpressAdapter(expressApp),
+        {
+          logger: ['error', 'warn', 'log'],
+        }
       );
 
       app.enableCors({
@@ -40,12 +48,17 @@ async function createApp(): Promise<express.Application> {
       );
 
       await app.init();
+      console.log('NestJS app initialized successfully');
       cachedApp = expressApp;
       isInitializing = false;
       return expressApp;
     } catch (error) {
       isInitializing = false;
       console.error('Error creating NestJS app:', error);
+      if (error instanceof Error) {
+        console.error('Error stack:', error.stack);
+        console.error('Error message:', error.message);
+      }
       throw error;
     }
   })();
@@ -56,17 +69,29 @@ async function createApp(): Promise<express.Application> {
 export default async function handler(req: Request, res: Response) {
   try {
     // Remove /api prefix from path
-    const originalUrl = req.url;
-    req.url = originalUrl.replace(/^\/api/, '') || '/';
+    const originalUrl = req.url || '';
+    const pathWithoutApi = originalUrl.replace(/^\/api/, '') || '/';
+    
+    // Create a new request object with modified URL
+    const modifiedReq = {
+      ...req,
+      url: pathWithoutApi,
+      originalUrl: pathWithoutApi,
+    } as Request;
     
     const app = await createApp();
-    app(req, res);
+    app(modifiedReq, res);
   } catch (error) {
     console.error('Error handling request:', error);
+    if (error instanceof Error) {
+      console.error('Error stack:', error.stack);
+      console.error('Error message:', error.message);
+    }
     if (!res.headersSent) {
       res.status(500).json({ 
         error: 'Internal Server Error',
-        message: error instanceof Error ? error.message : 'Unknown error'
+        message: error instanceof Error ? error.message : 'Unknown error',
+        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : String(error)) : undefined
       });
     }
   }
