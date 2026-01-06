@@ -38,6 +38,8 @@ async function createApp(): Promise<express.Application> {
       }
       
       const expressApp = express();
+      console.log('Creating NestJS app with AppModule...');
+      
       const app = await NestFactory.create(
         AppModule,
         new ExpressAdapter(expressApp),
@@ -45,11 +47,13 @@ async function createApp(): Promise<express.Application> {
           logger: ['error', 'warn', 'log'],
         }
       );
+      console.log('NestJS app created');
 
       app.enableCors({
         origin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '*',
         credentials: true,
       });
+      console.log('CORS enabled');
 
       app.useGlobalPipes(
         new ValidationPipe({
@@ -58,9 +62,12 @@ async function createApp(): Promise<express.Application> {
           transform: true,
         }),
       );
+      console.log('Global pipes configured');
 
       await app.init();
       console.log('NestJS app initialized successfully');
+      
+      // Don't call listen() - we're using ExpressAdapter
       cachedApp = expressApp;
       isInitializing = false;
       return expressApp;
@@ -80,30 +87,31 @@ async function createApp(): Promise<express.Application> {
 
 export default async function handler(req: Request, res: Response) {
   try {
+    console.log('Handler called with URL:', req.url);
+    console.log('Handler method:', req.method);
+    
     // Remove /api prefix from path
     const originalUrl = req.url || '';
     const pathWithoutApi = originalUrl.replace(/^\/api/, '') || '/';
-    
-    // Create a new request object with modified URL
-    const modifiedReq = {
-      ...req,
-      url: pathWithoutApi,
-      originalUrl: pathWithoutApi,
-    } as Request;
+    console.log('Path without /api:', pathWithoutApi);
     
     const app = await createApp();
-    app(modifiedReq, res);
+    console.log('App created, handling request...');
+    
+    // Use the app directly - it's already an Express app
+    app(req, res);
   } catch (error) {
     console.error('Error handling request:', error);
     if (error instanceof Error) {
       console.error('Error stack:', error.stack);
       console.error('Error message:', error.message);
+      console.error('Error name:', error.name);
     }
     if (!res.headersSent) {
       res.status(500).json({ 
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
-        details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : String(error)) : undefined
+        stack: error instanceof Error ? error.stack : undefined
       });
     }
   }
