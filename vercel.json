@@ -5,7 +5,8 @@
   "outputDirectory": "public",
   "functions": {
     "api/index.ts": {
-      "runtime": "nodejs20.x"
+      "runtime": "nodejs20.x",
+      "includeFiles": "dist/**"
     }
   },
   "builds": [
