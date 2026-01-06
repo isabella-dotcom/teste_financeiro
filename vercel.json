@@ -1,12 +1,12 @@
 {
   "version": 2,
-  "installCommand": "npm ci",
-  "buildCommand": "npm run build && mkdir -p public && echo '{}' > public/.gitkeep",
-  "outputDirectory": "public",
+  "buildCommand": "cd frontend && npm ci && npm run build && cd ../backend && npm ci && npm run build",
+  "installCommand": "cd frontend && npm ci && cd ../backend && npm ci",
+  "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.ts": {
       "runtime": "nodejs20.x",
-      "includeFiles": "dist/**"
+      "includeFiles": "backend/dist/**"
     }
   },
   "builds": [
@@ -17,8 +17,12 @@
   ],
   "routes": [
     {
+      "src": "/api/(.*)",
+      "dest": "/api/index.ts"
+    },
+    {
       "src": "/(.*)",
-      "dest": "api/index.ts"
+      "dest": "/index.html"
     }
   ]
 }
