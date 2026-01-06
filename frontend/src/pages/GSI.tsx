@@ -244,7 +244,7 @@ export default function GSI() {
                   <TableRow key={subgroup.id}>
                     <TableCell>{subgroup.codigo}</TableCell>
                     <TableCell>{subgroup.nome}</TableCell>
-                    <TableCell>{subgroup.group?.nome || '-'}</TableCell>
+                    <TableCell>{groups.find(g => g.id === subgroup.groupId)?.nome || '-'}</TableCell>
                     <TableCell>{subgroup.ativo ? 'Sim' : 'Não'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
@@ -286,7 +286,7 @@ export default function GSI() {
                   <TableRow key={item.id}>
                     <TableCell>{item.codigo}</TableCell>
                     <TableCell>{item.nome}</TableCell>
-                    <TableCell>{item.subgroup?.nome || '-'}</TableCell>
+                    <TableCell>{subgroups.find(sg => sg.id === item.subgroupId)?.nome || '-'}</TableCell>
                     <TableCell>{item.ativo ? 'Sim' : 'Não'}</TableCell>
                     <TableCell>
                       <div className="flex gap-2">
