@@ -5,10 +5,7 @@
   "builds": [
     {
       "src": "api/index.ts",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": "**"
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
