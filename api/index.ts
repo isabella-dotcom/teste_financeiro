@@ -2,10 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { Request, Response } from 'express';
+import * as path from 'path';
+import * as fs from 'fs';
 
 let cachedApp: express.Application | null = null;
 let isInitializing = false;
 let initPromise: Promise<express.Application> | null = null;
+let lastError: any = null;
 
 async function createApp(): Promise<express.Application> {
   if (cachedApp) {
@@ -26,16 +29,46 @@ async function createApp(): Promise<express.Application> {
       
       // Dynamically import AppModule to avoid module resolution issues
       let AppModule: any;
-      try {
-        const modulePath = require.resolve('../backend/dist/src/app.module');
-        console.log('Resolved AppModule path:', modulePath);
-        AppModule = require(modulePath).AppModule;
-      } catch (error) {
-        console.error('Error resolving AppModule:', error);
-        // Try direct require as fallback
-        AppModule = require('../backend/dist/src/app.module').AppModule;
-        console.log('AppModule loaded using direct require');
+      const debugInfo: string[] = [];
+      
+      const cwd = process.cwd();
+      const dirname = __dirname;
+      debugInfo.push(`CWD: ${cwd}`);
+      debugInfo.push(`__dirname: ${dirname}`);
+      
+      // Try multiple paths
+      const possiblePaths = [
+        '../backend/dist/src/app.module',
+        path.join(dirname, '../backend/dist/src/app.module'),
+        path.join(cwd, 'backend/dist/src/app.module'),
+        './backend/dist/src/app.module',
+      ];
+      
+      let modulePath: string | null = null;
+      for (const testPath of possiblePaths) {
+        try {
+          const resolved = require.resolve(testPath);
+          debugInfo.push(`✓ Found module at: ${resolved}`);
+          modulePath = resolved;
+          AppModule = require(resolved).AppModule;
+          break;
+        } catch (e: any) {
+          debugInfo.push(`✗ Failed: ${testPath} - ${e.message}`);
+        }
       }
+      
+      if (!AppModule) {
+        // Last resort: try direct require
+        try {
+          AppModule = require('../backend/dist/src/app.module').AppModule;
+          debugInfo.push('✓ Loaded using direct require');
+        } catch (e: any) {
+          debugInfo.push(`✗ Direct require failed: ${e.message}`);
+          throw new Error(`Cannot load AppModule. Debug: ${debugInfo.join('; ')}`);
+        }
+      }
+      
+      console.log('AppModule loaded. Debug info:', debugInfo.join('; '));
       
       const expressApp = express();
       console.log('Creating NestJS app with AppModule...');
@@ -90,7 +123,28 @@ export default async function handler(req: Request, res: Response) {
     console.log('=== Handler called ===');
     console.log('URL:', req.url);
     console.log('Method:', req.method);
-    console.log('Headers:', JSON.stringify(req.headers));
+    
+    // Debug endpoint - return system info
+    if (req.url === '/api/debug' || req.url === '/debug') {
+      const debugData = {
+        cwd: process.cwd(),
+        dirname: __dirname,
+        nodeVersion: process.version,
+        env: {
+          DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not set',
+          NODE_ENV: process.env.NODE_ENV,
+        },
+        files: {
+          backendDist: fs.existsSync(path.join(process.cwd(), 'backend/dist')),
+          appModule: fs.existsSync(path.join(process.cwd(), 'backend/dist/src/app.module.js')),
+        },
+        lastError: lastError ? {
+          message: lastError.message,
+          stack: lastError.stack,
+        } : null,
+      };
+      return res.json(debugData);
+    }
     
     // Remove /api prefix from path
     const originalUrl = req.url || '';
@@ -108,6 +162,7 @@ export default async function handler(req: Request, res: Response) {
     // Use the app directly - it's already an Express app
     app(req, res);
   } catch (error) {
+    lastError = error;
     console.error('=== Error in handler ===');
     console.error('Error:', error);
     if (error instanceof Error) {
@@ -123,7 +178,11 @@ export default async function handler(req: Request, res: Response) {
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
-        type: error instanceof Error ? error.name : typeof error
+        type: error instanceof Error ? error.name : typeof error,
+        debug: {
+          cwd: process.cwd(),
+          dirname: __dirname,
+        }
       });
     }
   }
