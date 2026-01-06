@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run vercel-build",
-  "installCommand": "npm run vercel-install",
+  "buildCommand": "bash build.sh",
+  "installCommand": "bash install.sh",
   "framework": null,
   "rewrites": [
     {
