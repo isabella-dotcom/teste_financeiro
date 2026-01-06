@@ -1,12 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "cd .. && ls -la && if [ -d frontend ]; then cd frontend && npm install && npm run build && cd ..; fi && if [ -d backend ]; then cd backend && npm install && npm run build && cd ..; fi",
-  "installCommand": "cd .. && if [ -d frontend ]; then cd frontend && npm install && cd ..; fi && npm install",
-  "outputDirectory": "../frontend/dist",
+  "buildCommand": "cd .. && if [ -d frontend ]; then cd frontend && npm install && npm run build && cd ..; fi && if [ -d backend ]; then cd backend && npm install && npm run build && cd ..; fi",
+  "installCommand": "cd .. && if [ -d frontend ]; then cd frontend && npm install && cd ..; fi && if [ -d backend ]; then cd backend && npm install && cd ..; fi",
   "functions": {
-    "../api/index.ts": {
+    "api/index.ts": {
       "runtime": "nodejs20.x",
-      "includeFiles": "dist/**"
+      "includeFiles": "backend/dist/**"
     }
   },
   "rewrites": [
@@ -16,7 +15,7 @@
     },
     {
       "source": "/(.*)",
-      "destination": "/index.html"
+      "destination": "/frontend/dist/index.html"
     }
   ]
 }
