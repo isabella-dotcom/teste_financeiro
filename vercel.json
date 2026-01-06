@@ -5,7 +5,7 @@
   "functions": {
     "api/index.ts": {
       "runtime": "nodejs20.x",
-      "includeFiles": "backend/dist/**,backend/node_modules/**,backend/prisma/**",
+      "includeFiles": "backend/dist/**,backend/node_modules/**,backend/prisma/**,backend/package.json",
       "memory": 1024,
       "maxDuration": 30
     }
