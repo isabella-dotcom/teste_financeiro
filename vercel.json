@@ -3,6 +3,11 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build && mkdir -p public && echo '{}' > public/.gitkeep",
   "outputDirectory": "public",
+  "functions": {
+    "api/index.ts": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "builds": [
     {
       "src": "api/index.ts",
