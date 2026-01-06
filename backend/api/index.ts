@@ -6,7 +6,7 @@ import express, { Request, Response } from 'express';
 
 let cachedApp: express.Application | null = null;
 let isInitializing = false;
-const initPromise: Promise<express.Application> | null = null;
+let initPromise: Promise<express.Application> | null = null;
 
 async function createApp(): Promise<express.Application> {
   if (cachedApp) {
@@ -17,7 +17,7 @@ async function createApp(): Promise<express.Application> {
     return initPromise;
   }
 
-  const promise = (async () => {
+  initPromise = (async () => {
     try {
       isInitializing = true;
       const expressApp = express();
@@ -50,7 +50,7 @@ async function createApp(): Promise<express.Application> {
     }
   })();
 
-  return promise;
+  return initPromise;
 }
 
 export default async function handler(req: Request, res: Response) {
