@@ -87,31 +87,43 @@ async function createApp(): Promise<express.Application> {
 
 export default async function handler(req: Request, res: Response) {
   try {
-    console.log('Handler called with URL:', req.url);
-    console.log('Handler method:', req.method);
+    console.log('=== Handler called ===');
+    console.log('URL:', req.url);
+    console.log('Method:', req.method);
+    console.log('Headers:', JSON.stringify(req.headers));
     
     // Remove /api prefix from path
     const originalUrl = req.url || '';
     const pathWithoutApi = originalUrl.replace(/^\/api/, '') || '/';
     console.log('Path without /api:', pathWithoutApi);
     
+    // Modify the request URL
+    req.url = pathWithoutApi;
+    req.originalUrl = pathWithoutApi;
+    
+    console.log('Creating app...');
     const app = await createApp();
     console.log('App created, handling request...');
     
     // Use the app directly - it's already an Express app
     app(req, res);
   } catch (error) {
-    console.error('Error handling request:', error);
+    console.error('=== Error in handler ===');
+    console.error('Error:', error);
     if (error instanceof Error) {
-      console.error('Error stack:', error.stack);
-      console.error('Error message:', error.message);
       console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    } else {
+      console.error('Error (not Error instance):', JSON.stringify(error));
     }
+    
     if (!res.headersSent) {
       res.status(500).json({ 
         error: 'Internal Server Error',
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
+        type: error instanceof Error ? error.name : typeof error
       });
     }
   }
