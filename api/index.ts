@@ -4,7 +4,25 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { Request, Response } from 'express';
 
 // Import AppModule from compiled code
-import { AppModule } from '../backend/dist/src/app.module';
+// Use dynamic import to handle path resolution issues
+let AppModule: any;
+
+try {
+  // Try to resolve the module path
+  const modulePath = require.resolve('../backend/dist/src/app.module');
+  AppModule = require(modulePath).AppModule;
+  console.log('AppModule loaded from:', modulePath);
+} catch (error) {
+  console.error('Error loading AppModule:', error);
+  // Fallback: try direct require
+  try {
+    AppModule = require('../backend/dist/src/app.module').AppModule;
+    console.log('AppModule loaded using fallback method');
+  } catch (e) {
+    console.error('Failed to load AppModule:', e);
+    throw new Error(`Cannot find AppModule: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
 
 let cachedApp: express.Application | null = null;
 let isInitializing = false;
