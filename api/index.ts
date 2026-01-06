@@ -3,27 +3,6 @@ import { ValidationPipe } from '@nestjs/common';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express, { Request, Response } from 'express';
 
-// Import AppModule from compiled code
-// Use dynamic import to handle path resolution issues
-let AppModule: any;
-
-try {
-  // Try to resolve the module path
-  const modulePath = require.resolve('../backend/dist/src/app.module');
-  AppModule = require(modulePath).AppModule;
-  console.log('AppModule loaded from:', modulePath);
-} catch (error) {
-  console.error('Error loading AppModule:', error);
-  // Fallback: try direct require
-  try {
-    AppModule = require('../backend/dist/src/app.module').AppModule;
-    console.log('AppModule loaded using fallback method');
-  } catch (e) {
-    console.error('Failed to load AppModule:', e);
-    throw new Error(`Cannot find AppModule: ${e instanceof Error ? e.message : String(e)}`);
-  }
-}
-
 let cachedApp: express.Application | null = null;
 let isInitializing = false;
 let initPromise: Promise<express.Application> | null = null;
@@ -42,6 +21,21 @@ async function createApp(): Promise<express.Application> {
       isInitializing = true;
       console.log('Initializing NestJS app...');
       console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Set' : 'Not set');
+      console.log('Current working directory:', process.cwd());
+      console.log('__dirname:', __dirname);
+      
+      // Dynamically import AppModule to avoid module resolution issues
+      let AppModule: any;
+      try {
+        const modulePath = require.resolve('../backend/dist/src/app.module');
+        console.log('Resolved AppModule path:', modulePath);
+        AppModule = require(modulePath).AppModule;
+      } catch (error) {
+        console.error('Error resolving AppModule:', error);
+        // Try direct require as fallback
+        AppModule = require('../backend/dist/src/app.module').AppModule;
+        console.log('AppModule loaded using direct require');
+      }
       
       const expressApp = express();
       const app = await NestFactory.create(
