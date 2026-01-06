@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "chmod +x vercel-build.sh && bash vercel-build.sh",
-  "installCommand": "chmod +x vercel-install.sh && bash vercel-install.sh",
+  "buildCommand": "if [ -d frontend ]; then cd frontend && npm install && npm run build && cd ..; fi && if [ -d backend ]; then cd backend && npm install && npm run build && cd ..; fi",
+  "installCommand": "if [ -d frontend ]; then cd frontend && npm install && cd ..; fi && if [ -d backend ]; then cd backend && npm install && cd ..; fi",
   "outputDirectory": "frontend/dist",
   "functions": {
     "api/index.ts": {
