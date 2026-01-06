@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "installCommand": "cd backend && npm ci",
-  "buildCommand": "cd backend && npm run build",
+  "installCommand": "ls -la && if [ -d \"backend\" ]; then cd backend && npm ci; else echo \"Backend directory not found!\" && exit 1; fi",
+  "buildCommand": "if [ -d \"backend\" ]; then cd backend && npm run build; else echo \"Backend directory not found!\" && exit 1; fi",
   "builds": [
     {
       "src": "api/index.ts",
