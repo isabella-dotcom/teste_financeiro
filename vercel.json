@@ -1,20 +1,18 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "cd backend && npm install && npx prisma generate && npm run build",
+  "installCommand": "cd backend && npm install",
+  "framework": null,
+  "rewrites": [
     {
-      "src": "backend/api/index.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "backend/api/index.ts"
+      "source": "/(.*)",
+      "destination": "/api"
     }
   ],
   "functions": {
-    "backend/api/index.ts": {
-      "includeFiles": "backend/**"
+    "api/index.ts": {
+      "includeFiles": "backend/**",
+      "runtime": "nodejs18.x"
     }
   }
 }
