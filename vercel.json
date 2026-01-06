@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "cd backend && npm install && npx prisma generate && npm run build",
-  "installCommand": "cd backend && npm install",
+  "buildCommand": "npm run vercel-build",
+  "installCommand": "npm run vercel-install",
   "framework": null,
   "rewrites": [
     {

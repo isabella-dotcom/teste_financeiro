@@ -3,4 +3,5 @@ frontend
 .git
 *.md
 !README.md
+!DEPLOY_VERCEL_ATUALIZADO.md
 
