@@ -4,131 +4,48 @@ import * as fs from 'fs';
 
 let app: express.Application | null = null;
 let initError: any = null;
-let isInitializing = false;
-let initPromise: Promise<express.Application> | null = null;
 
-async function initializeApp(): Promise<express.Application> {
-  if (app) return app;
-  if (initError) throw initError;
-  if (isInitializing && initPromise) return initPromise;
-
-  isInitializing = true;
-  initPromise = (async () => {
-    try {
-      console.log('=== INICIANDO ===');
-      console.log('CWD:', process.cwd());
-      console.log('__dirname:', __dirname);
-
-      // Verificar estrutura de diretórios
-      const cwd = process.cwd();
-      const backendDist = path.join(cwd, 'backend', 'dist');
-      const backendDistSrc = path.join(backendDist, 'src');
-      const appModulePath = path.join(backendDistSrc, 'app.module.js');
-
-      console.log('Verificando:', appModulePath);
-      console.log('Existe?', fs.existsSync(appModulePath));
-
-      if (!fs.existsSync(appModulePath)) {
-        // Listar o que existe
-        const dirs: any = {};
-        if (fs.existsSync(backendDist)) {
-          dirs.dist = fs.readdirSync(backendDist);
-        }
-        if (fs.existsSync(backendDistSrc)) {
-          dirs.src = fs.readdirSync(backendDistSrc);
-        }
-        throw new Error(`AppModule não encontrado em ${appModulePath}. Diretórios: ${JSON.stringify(dirs)}`);
-      }
-
-      // Carregar módulos necessários
-      const { NestFactory } = await import('@nestjs/core');
-      const { ValidationPipe } = await import('@nestjs/common');
-      const { ExpressAdapter } = await import('@nestjs/platform-express');
-
-      // Carregar AppModule
-      console.log('Carregando AppModule...');
-      delete require.cache[appModulePath];
-      const appModule = require(appModulePath);
-      
-      if (!appModule || !appModule.AppModule) {
-        throw new Error(`AppModule não exportado. Módulo: ${JSON.stringify(Object.keys(appModule || {}))}`);
-      }
-
-      const AppModule = appModule.AppModule;
-      console.log('✓ AppModule carregado');
-
-      // Criar Express app
-      const expressApp = express();
-      
-      // Criar NestJS app
-      console.log('Criando NestJS app...');
-      const nestApp = await NestFactory.create(
-        AppModule,
-        new ExpressAdapter(expressApp),
-        { logger: false }
-      );
-
-      // Configurar
-      nestApp.enableCors({
-        origin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '*',
-        credentials: true,
-      });
-
-      nestApp.useGlobalPipes(
-        new ValidationPipe({
-          whitelist: true,
-          forbidNonWhitelisted: true,
-          transform: true,
-        })
-      );
-
-      console.log('Inicializando...');
-      await nestApp.init();
-      console.log('✓ SUCESSO!');
-
-      app = expressApp;
-      isInitializing = false;
-      return app;
-    } catch (error: any) {
-      isInitializing = false;
-      initError = error;
-      console.error('=== ERRO ===');
-      console.error('Mensagem:', error?.message);
-      console.error('Stack:', error?.stack);
-      throw error;
-    }
-  })();
-
-  return initPromise;
-}
-
+// Endpoint de teste simples - SEM NADA
 export default async function handler(req: Request, res: Response) {
   try {
-    // Endpoint de teste simples - SEM NestJS
+    const cwd = process.cwd();
+    const dirname = __dirname;
+    
+    // Se for /test, retornar info básica SEM inicializar nada
     if (req.url === '/api/test' || req.url === '/test' || req.path === '/test') {
-      const cwd = process.cwd();
-      const dirname = __dirname;
+      return res.json({
+        status: 'ok',
+        message: 'Função serverless funcionando!',
+        cwd,
+        dirname,
+        nodeVersion: process.version,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    // Se for /debug, mostrar estrutura de arquivos
+    if (req.url === '/api/debug' || req.url === '/debug' || req.path === '/debug') {
       const backendDist = path.join(cwd, 'backend', 'dist');
       const appModulePath = path.join(backendDist, 'src', 'app.module.js');
-
-      let distContents: any = null;
-      let srcContents: any = null;
+      
+      let distFiles: string[] = [];
+      let srcFiles: string[] = [];
       
       if (fs.existsSync(backendDist)) {
         try {
-          distContents = fs.readdirSync(backendDist);
+          distFiles = fs.readdirSync(backendDist);
         } catch (e) {}
       }
       
-      if (fs.existsSync(path.join(backendDist, 'src'))) {
+      const srcPath = path.join(backendDist, 'src');
+      if (fs.existsSync(srcPath)) {
         try {
-          srcContents = fs.readdirSync(path.join(backendDist, 'src'));
+          srcFiles = fs.readdirSync(srcPath);
         } catch (e) {}
       }
 
       return res.json({
-        status: 'ok',
-        message: 'Função serverless está funcionando!',
+        status: 'debug',
         cwd,
         dirname,
         files: {
@@ -137,45 +54,91 @@ export default async function handler(req: Request, res: Response) {
           path: appModulePath,
         },
         contents: {
-          dist: distContents,
-          src: srcContents,
+          dist: distFiles,
+          src: srcFiles,
         },
-        app: {
-          initialized: !!app,
-          hasError: !!initError,
+        nodeModules: {
+          backend: fs.existsSync(path.join(cwd, 'backend', 'node_modules')),
+          backendNest: fs.existsSync(path.join(cwd, 'backend', 'node_modules', '@nestjs')),
         },
-        error: initError ? {
-          message: initError.message,
-          stack: initError.stack?.split('\n').slice(0, 5).join('\n'),
-        } : null,
       });
     }
 
-    // Endpoint de debug
-    if (req.url === '/api/debug' || req.url === '/debug' || req.path === '/debug') {
-      const cwd = process.cwd();
-      const backendDist = path.join(cwd, 'backend', 'dist');
-      const appModulePath = path.join(backendDist, 'src', 'app.module.js');
+    // Para outras rotas, tentar inicializar o NestJS
+    if (!app && !initError) {
+      try {
+        console.log('=== Tentando inicializar NestJS ===');
+        console.log('CWD:', cwd);
+        console.log('__dirname:', dirname);
 
-      return res.json({
-        status: 'debug',
-        cwd,
-        dirname: __dirname,
-        nodeVersion: process.version,
-        files: {
-          backendDist: fs.existsSync(backendDist),
-          appModuleJs: fs.existsSync(appModulePath),
-          path: appModulePath,
+        // Verificar se arquivo existe
+        const backendDist = path.join(cwd, 'backend', 'dist');
+        const appModulePath = path.join(backendDist, 'src', 'app.module.js');
+        
+        if (!fs.existsSync(appModulePath)) {
+          throw new Error(`AppModule não encontrado: ${appModulePath}`);
+        }
+
+        // Carregar módulos
+        const { NestFactory } = require('@nestjs/core');
+        const { ValidationPipe } = require('@nestjs/common');
+        const { ExpressAdapter } = require('@nestjs/platform-express');
+
+        // Carregar AppModule
+        delete require.cache[appModulePath];
+        const appModule = require(appModulePath);
+        const AppModule = appModule.AppModule;
+
+        if (!AppModule) {
+          throw new Error('AppModule não encontrado no módulo');
+        }
+
+        // Criar app
+        const expressApp = express();
+        const nestApp = await NestFactory.create(
+          AppModule,
+          new ExpressAdapter(expressApp),
+          { logger: false }
+        );
+
+        nestApp.enableCors({
+          origin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '*',
+          credentials: true,
+        });
+
+        nestApp.useGlobalPipes(
+          new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+            transform: true,
+          })
+        );
+
+        await nestApp.init();
+        app = expressApp;
+        console.log('✓ NestJS inicializado');
+      } catch (error: any) {
+        initError = error;
+        console.error('Erro ao inicializar:', error.message);
+        console.error(error.stack);
+      }
+    }
+
+    if (initError) {
+      return res.status(500).json({
+        error: 'Erro ao inicializar aplicação',
+        message: initError.message,
+        stack: initError.stack,
+        debug: {
+          cwd,
+          dirname,
         },
-        app: {
-          initialized: !!app,
-          hasError: !!initError,
-          isInitializing,
-        },
-        error: initError ? {
-          message: initError.message,
-          stack: initError.stack,
-        } : null,
+      });
+    }
+
+    if (!app) {
+      return res.status(500).json({
+        error: 'Aplicação não inicializada',
       });
     }
 
@@ -189,9 +152,8 @@ export default async function handler(req: Request, res: Response) {
     req.originalUrl = cleanUrl;
     if (req.path) req.path = cleanUrl;
 
-    // Inicializar app
-    const expressApp = await initializeApp();
-    expressApp(req, res);
+    // Passar para Express
+    app(req, res);
   } catch (error: any) {
     console.error('=== Handler Error ===');
     console.error(error?.message);
@@ -201,14 +163,6 @@ export default async function handler(req: Request, res: Response) {
       res.status(500).json({
         error: 'Internal Server Error',
         message: error?.message || 'Unknown error',
-        debug: {
-          cwd: process.cwd(),
-          dirname: __dirname,
-          initError: initError ? {
-            message: initError.message,
-            stack: initError.stack?.split('\n').slice(0, 10).join('\n'),
-          } : null,
-        },
       });
     }
   }
