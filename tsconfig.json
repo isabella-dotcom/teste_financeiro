@@ -13,12 +13,10 @@
     "isolatedModules": true,
     "noEmit": true,
     "baseUrl": ".",
-    "paths": {
-      "@/*": ["./backend/src/*"]
-    }
+    "types": ["node"]
   },
-  "include": ["api/**/*", "backend/**/*"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["api/**/*"],
+  "exclude": ["node_modules", "dist", "backend", "frontend"]
 }
 
 
