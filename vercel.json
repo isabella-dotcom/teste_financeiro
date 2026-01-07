@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "if [ -d frontend ]; then cd frontend && npm install && npm run build && cd ..; fi && if [ -d backend ]; then cd backend && npm install && npx prisma generate && npm run build && cd ..; fi",
+  "buildCommand": "if [ -d backend ]; then cd backend && npm install && npx prisma generate && npm run build && cd ..; fi && if [ -d frontend ]; then cd frontend && npm install && npm run build && cd ..; fi",
   "installCommand": "if [ -d frontend ]; then cd frontend && npm install && cd ..; fi && if [ -d backend ]; then cd backend && npm install && cd ..; fi",
   "functions": {
     "api/index.ts": {
