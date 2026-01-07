@@ -107,3 +107,4 @@ cat vercel.json
 3. O handler usa cache para melhor performance
 4. Todas as rotas do NestJS estão disponíveis através do handler
 
+
