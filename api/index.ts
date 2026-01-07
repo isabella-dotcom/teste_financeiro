@@ -10,6 +10,55 @@ let initError: any = null;
 let isInitializing = false;
 let initPromise: Promise<express.Application> | null = null;
 
+function findAppModuleFile(): string | null {
+  const cwd = process.cwd();
+  const dirname = __dirname;
+  
+  // Lista de caminhos possíveis
+  const possiblePaths = [
+    path.join(cwd, 'backend', 'dist', 'src', 'app.module.js'),
+    path.join(dirname, '..', 'backend', 'dist', 'src', 'app.module.js'),
+    path.join(cwd, '..', 'backend', 'dist', 'src', 'app.module.js'),
+  ];
+
+  // Primeiro, verificar se o arquivo existe
+  for (const testPath of possiblePaths) {
+    const fullPath = path.resolve(testPath);
+    if (fs.existsSync(fullPath)) {
+      return fullPath;
+    }
+  }
+
+  return null;
+}
+
+function loadAppModule(): any {
+  const modulePath = findAppModuleFile();
+  
+  if (!modulePath) {
+    throw new Error(
+      `AppModule não encontrado. CWD: ${process.cwd()}, __dirname: ${__dirname}`
+    );
+  }
+
+  try {
+    // Limpar cache se existir
+    if (require.cache[modulePath]) {
+      delete require.cache[modulePath];
+    }
+    
+    const module = require(modulePath);
+    
+    if (!module || !module.AppModule) {
+      throw new Error(`AppModule não exportado em ${modulePath}`);
+    }
+    
+    return module.AppModule;
+  } catch (error: any) {
+    throw new Error(`Erro ao carregar AppModule de ${modulePath}: ${error.message}`);
+  }
+}
+
 async function initializeApp(): Promise<express.Application> {
   if (app) return app;
   if (initError) throw initError;
@@ -18,93 +67,45 @@ async function initializeApp(): Promise<express.Application> {
   isInitializing = true;
   initPromise = (async () => {
     try {
-      console.log('=== Iniciando inicialização do NestJS ===');
+      console.log('=== Iniciando inicialização ===');
       console.log('CWD:', process.cwd());
       console.log('__dirname:', __dirname);
-      console.log('NODE_ENV:', process.env.NODE_ENV);
-      console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'Definida' : 'Não definida');
-
-      // Caminhos possíveis para o AppModule compilado
-      const possiblePaths = [
-        path.join(process.cwd(), 'backend', 'dist', 'src', 'app.module.js'),
-        path.join(__dirname, '..', 'backend', 'dist', 'src', 'app.module.js'),
-        path.join(process.cwd(), '..', 'backend', 'dist', 'src', 'app.module.js'),
-      ];
-
-      let AppModule: any = null;
-      let modulePath: string | null = null;
-
-      // Tentar encontrar e carregar o módulo
-      for (const testPath of possiblePaths) {
-        const fullPath = path.resolve(testPath);
-        console.log(`Tentando: ${fullPath}`);
-        console.log(`Existe: ${fs.existsSync(fullPath)}`);
-
-        if (fs.existsSync(fullPath)) {
-          try {
-            // Limpar cache do require para garantir que carregue a versão mais recente
-            delete require.cache[require.resolve(fullPath)];
-            const module = require(fullPath);
-            
-            if (module && module.AppModule) {
-              AppModule = module.AppModule;
-              modulePath = fullPath;
-              console.log(`✓ AppModule encontrado em: ${fullPath}`);
-              break;
-            } else {
-              console.log(`✗ Módulo encontrado mas AppModule não está exportado`);
-            }
-          } catch (e: any) {
-            console.log(`✗ Erro ao carregar: ${e.message}`);
-            console.log(e.stack);
-          }
-        }
+      
+      // Verificar se backend/dist existe
+      const backendDist = path.join(process.cwd(), 'backend', 'dist');
+      if (!fs.existsSync(backendDist)) {
+        throw new Error(`backend/dist não encontrado em ${backendDist}`);
       }
+      
+      console.log('✓ backend/dist encontrado');
 
-      if (!AppModule) {
-        // Última tentativa: usar require.resolve
-        try {
-          const resolved = require.resolve('../backend/dist/src/app.module');
-          delete require.cache[resolved];
-          const module = require(resolved);
-          if (module && module.AppModule) {
-            AppModule = module.AppModule;
-            modulePath = resolved;
-            console.log(`✓ AppModule encontrado via require.resolve: ${resolved}`);
-          }
-        } catch (e: any) {
-          console.log(`✗ require.resolve falhou: ${e.message}`);
-        }
-      }
+      // Carregar AppModule
+      console.log('Carregando AppModule...');
+      const AppModule = loadAppModule();
+      console.log('✓ AppModule carregado');
 
-      if (!AppModule) {
-        const error = new Error(
-          `AppModule não encontrado. Caminhos testados: ${possiblePaths.join(', ')}`
-        );
-        console.error('=== ERRO: AppModule não encontrado ===');
-        console.error(error.message);
-        initError = error;
-        throw error;
-      }
-
+      // Criar aplicação Express
       console.log('Criando aplicação Express...');
       const expressApp = express();
       
+      // Criar aplicação NestJS
       console.log('Criando aplicação NestJS...');
       const nestApp = await NestFactory.create(
         AppModule,
         new ExpressAdapter(expressApp),
         {
-          logger: ['error', 'warn', 'log'],
+          logger: ['error', 'warn'],
         }
       );
 
+      // Configurar CORS
       console.log('Configurando CORS...');
       nestApp.enableCors({
         origin: process.env.FRONTEND_URL || process.env.CORS_ORIGIN || '*',
         credentials: true,
       });
 
+      // Configurar ValidationPipe
       console.log('Configurando ValidationPipe...');
       nestApp.useGlobalPipes(
         new ValidationPipe({
@@ -114,6 +115,7 @@ async function initializeApp(): Promise<express.Application> {
         })
       );
 
+      // Inicializar
       console.log('Inicializando NestJS...');
       await nestApp.init();
       
@@ -137,19 +139,31 @@ async function initializeApp(): Promise<express.Application> {
 
 export default async function handler(req: Request, res: Response) {
   try {
-    // Endpoint de debug
+    // Endpoint de debug - SEM inicializar NestJS
     if (req.url === '/api/debug' || req.url === '/debug' || req.path === '/debug') {
       const cwd = process.cwd();
       const dirname = __dirname;
+      const modulePath = findAppModuleFile();
       
-      const testPaths = [
-        path.join(cwd, 'backend', 'dist', 'src', 'app.module.js'),
-        path.join(dirname, '..', 'backend', 'dist', 'src', 'app.module.js'),
-      ];
+      // Listar arquivos em backend/dist se existir
+      const backendDist = path.join(cwd, 'backend', 'dist');
+      let distContents: string[] = [];
+      if (fs.existsSync(backendDist)) {
+        try {
+          distContents = fs.readdirSync(backendDist);
+        } catch (e) {
+          // Ignorar erro
+        }
+      }
 
-      const fileChecks: Record<string, boolean> = {};
-      for (const testPath of testPaths) {
-        fileChecks[testPath] = fs.existsSync(testPath);
+      const backendDistSrc = path.join(backendDist, 'src');
+      let srcContents: string[] = [];
+      if (fs.existsSync(backendDistSrc)) {
+        try {
+          srcContents = fs.readdirSync(backendDistSrc);
+        } catch (e) {
+          // Ignorar erro
+        }
       }
 
       return res.json({
@@ -162,9 +176,14 @@ export default async function handler(req: Request, res: Response) {
           DATABASE_URL: process.env.DATABASE_URL ? 'Definida' : 'Não definida',
         },
         files: {
-          ...fileChecks,
-          backendDist: fs.existsSync(path.join(cwd, 'backend', 'dist')),
-          backendDistSrc: fs.existsSync(path.join(cwd, 'backend', 'dist', 'src')),
+          backendDist: fs.existsSync(backendDist),
+          backendDistSrc: fs.existsSync(backendDistSrc),
+          appModuleJs: modulePath ? fs.existsSync(modulePath) : false,
+          modulePath: modulePath || null,
+        },
+        contents: {
+          dist: distContents,
+          src: srcContents,
         },
         app: {
           initialized: !!app,
@@ -178,7 +197,7 @@ export default async function handler(req: Request, res: Response) {
       });
     }
 
-    // Remover prefixo /api da URL se existir
+    // Remover prefixo /api da URL
     let cleanUrl = req.url || req.path || '/';
     if (cleanUrl.startsWith('/api')) {
       cleanUrl = cleanUrl.replace(/^\/api/, '') || '/';
@@ -186,7 +205,9 @@ export default async function handler(req: Request, res: Response) {
     
     req.url = cleanUrl;
     req.originalUrl = cleanUrl;
-    req.path = cleanUrl;
+    if (req.path) {
+      req.path = cleanUrl;
+    }
 
     // Inicializar e obter a aplicação
     const expressApp = await initializeApp();
@@ -206,6 +227,10 @@ export default async function handler(req: Request, res: Response) {
           cwd: process.cwd(),
           dirname: __dirname,
           hasInitError: !!initError,
+          initError: initError ? {
+            message: initError.message,
+            stack: initError.stack,
+          } : null,
         },
       });
     }
